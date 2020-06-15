@@ -18,13 +18,18 @@ Currently Implemented
 | 1D EWT functions
 | Boundaries
 	|- scale-space option with otsu method only
-
+| 2D EWT functions
+	|-Tensor ewt and iewt
+| Utilities
+	|-parameter struct
+	|-Spectrum Regularization
 =======================
 To come in next version
 =======================
-|- Signal pre-processing options
-|- EWT2D: Tensor option
-|- Extra 1D Boundary detect functionality
+|-Pseudo-Polar FFT
+|-Curvelet option 1
+|-Test examples
+|-
 ===============
 Needed Packages
 ===============
@@ -36,8 +41,7 @@ Organization
 EWT
 |
 |-EWT1D		: 1D EWT functions
-|-EWT2D		: NOT IMPLEMENTED
+|-EWT2D		: 2D EWT functions
 |-Boundaries	: Functions needed for boundary detection (1d or 2d)
 |-Tests		: Test functions for testing
-|Utilities	: NOT IMPLEMENTED
-
+|-Utilities	: Includes parameter struct and various utility functions

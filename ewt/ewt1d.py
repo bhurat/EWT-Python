@@ -1,9 +1,10 @@
 import numpy as np
 from ewt.boundaries import *
 
+
 def EWT1D(f,params):
     ff = np.fft.fft(f)
-    bounds = ewt_boundariesDetect(np.abs(ff[0:int(np.round(len(ff)/2))]))
+    bounds = ewt_boundariesDetect(np.abs(ff[0:int(np.round(len(ff)/2))]),params)
     bounds = bounds*np.pi/(np.round(len(ff)/2))
     
     mfb = EWT_LP_Filterbank(bounds,len(ff))

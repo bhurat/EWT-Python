@@ -10,9 +10,12 @@ from scipy.special import iv
 import matplotlib.pyplot as plt
 from ewt.ewt1d import *
 from ewt.tests import *
+from ewt.utilities import EWTParams
+
+params = EWTParams()
 
 f = EWT_1DEx_sig2(2000)
-params = []
+
 [ewt, mfb, bounds] = EWT1D(f,params)
 
 show_coefs = 0
