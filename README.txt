@@ -17,7 +17,7 @@ Currently Implemented
 | 1D EWT Jupiter Notebook example
 | 1D EWT functions
 | Boundaries
-	|- scale-space option with otsu method only
+	|- scale-space option with all methods (otsu, half normal law, empirical law, means, kmeans)
 | 2D EWT functions
 	|-Tensor ewt and iewt
 | Utilities
