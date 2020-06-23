@@ -22,7 +22,7 @@ Currently Implemented
 		|-Tensor ewt and iewt
 		|-Curvelet-1 ewt and iewt
 	|-Boundaries
-		|-scale-space option with all options
+		|-scale-space option with all thresholding methods
 	|-Utilities
 		|-parameter struct
 		|-Spectrum Regularization
@@ -41,10 +41,15 @@ Needed Packages
 ============
 Organization
 ============
-EWT
-|
-|-EWT1D		: 1D EWT functions
-|-EWT2D		: 2D EWT functions
-|-Boundaries	: Functions needed for boundary detection (1d or 2d)
-|-Tests		: Test functions for testing 
-|-Utilities	: Includes parameter struct and various utility functions
+|-ewt (package)
+	|-ewt1d.py		: 1D EWT functions
+	|-ewt2d.py		: 2D EWT functions
+	|-boundaries.py	: Functions needed for boundary detection (1d or 2d)
+	|-utilities.py	: Includes parameter struct and various utility functions
+|-Tests
+	|-1d 			: 1d testing functions
+	|-2d			:2d testing functions
+|-Notebook Examples
+	|-1d ewt example
+|-test_EWT1D.py		:example for 1d
+|-test_EWT2D.py		:example for 2d
