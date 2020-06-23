@@ -26,9 +26,9 @@ def EWT_LP_Filterbank(bounds,N):
     gamma = 1;
     for i in range(0,len(bounds)-1):
         r = (bounds[i+1] - bounds[i])/(bounds[i+1]+bounds[i])
-        if r < gamma:
+        if r < gamma and r > 1e-6:
             gamma = r
-    aw = np.arange(0,2*np.pi,2*np.pi/N)
+    aw = np.arange(0,2*np.pi-1/N,2*np.pi/N)
     aw[np.floor(N/2).astype(int):] -= 2*np.pi 
     aw = np.abs(aw)
     filterbank = np.zeros([N, len(bounds)+1])

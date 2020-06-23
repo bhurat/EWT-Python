@@ -14,7 +14,7 @@ from ewt.utilities import EWTParams
 
 params = EWTParams()
 
-f = EWT_1DEx_sig2(2000)
+f = np.genfromtxt('Tests/1d/seismic.csv', delimiter=',')
 
 [ewt, mfb, bounds] = EWT1D(f,params)
 

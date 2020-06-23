@@ -15,26 +15,29 @@ For any questions, comments, bug reports, email basile.hurat@gmail.com
 Currently Implemented
 =====================
 | 1D EWT Jupiter Notebook example
-| 1D EWT functions
-| Boundaries
-	|- scale-space option with otsu method only
-| 2D EWT functions
-	|-Tensor ewt and iewt
-| Utilities
-	|-parameter struct
-	|-Spectrum Regularization
+|
+|ewt (package)
+	|-1d EWT functions
+	|-2D EWT functions
+		|-Tensor ewt and iewt
+		|-Curvelet-1 ewt and iewt
+	|-Boundaries
+		|-scale-space option with all options
+	|-Utilities
+		|-parameter struct
+		|-Spectrum Regularization
+
 =======================
 To come in next version
 =======================
-|-Pseudo-Polar FFT
-|-Curvelet option 1
-|-Test examples
-|-
+|-Curvelet option 2
+|-Curvelet option 3
+|-Comments
 ===============
 Needed Packages
 ===============
 - Numpy		:Most functionality is done using numpy arrays
-- Scipy		:Needed for bessel function for scale-space
+- Scipy		:Needed for bessel function for scale-space and erf function for ppfft
 ============
 Organization
 ============
@@ -43,5 +46,5 @@ EWT
 |-EWT1D		: 1D EWT functions
 |-EWT2D		: 2D EWT functions
 |-Boundaries	: Functions needed for boundary detection (1d or 2d)
-|-Tests		: Test functions for testing
+|-Tests		: Test functions for testing 
 |-Utilities	: Includes parameter struct and various utility functions

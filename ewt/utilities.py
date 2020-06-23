@@ -15,6 +15,7 @@ class EWTParams:
         self.lengthFilter = 7
         self.sigmaFilter = 2
         self.typeDetect = 'otsu'
+        self.option = 1
         
 def spectrumRegularize(f, params):
     if params.spectrumRegularize.lower() == 'gaussian':
