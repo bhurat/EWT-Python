@@ -20,18 +20,19 @@ Currently Implemented
 	|-1d EWT functions
 	|-2D EWT functions
 		|-Tensor ewt and iewt
-		|-Curvelet-1 ewt and iewt
+		|-Curvelet-1,2,3 ewt and iewt
 	|-Boundaries
 		|-scale-space option with all thresholding methods
 	|-Utilities
 		|-parameter struct
 		|-Spectrum Regularization
+		|-Functions to visualize boundaries for Tensor and Curvelet ewt
 
 =======================
 To come in next version
 =======================
-|-Curvelet option 2
-|-Curvelet option 3
+|-LP EWT 
+|-Utility (visualization) functions
 |-Comments
 ===============
 Needed Packages
@@ -45,7 +46,7 @@ Organization
 	|-ewt1d.py		: 1D EWT functions
 	|-ewt2d.py		: 2D EWT functions
 	|-boundaries.py	: Functions needed for boundary detection (1d or 2d)
-	|-utilities.py	: Includes parameter struct and various utility functions
+	|-utilities.py	: Includes parameter struct and various utility functions, including visualization
 |-Tests
 	|-1d 			: 1d testing functions
 	|-2d			:2d testing functions
