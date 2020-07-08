@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jun  8 15:44:06 2020
+Generates the results given by the 1D empirical wavelet transforms, which 
+are described in the papers
+J. Gilles, "Empirical Wavelet Transform", IEEE Trans. on Signal Processing, 
+2013
 
-@author: bazzz
+Feel free to try with your own signals and change parameters. 
+@author: Basile Hurat
 """
 
 import numpy as np

@@ -6,7 +6,8 @@ Created on Sat Jun 13 10:04:41 2020
 """
 import numpy as np
 from scipy.signal import gaussian
-
+import matplotlib.pyplot as plt
+from matplotlib import patches
 class EWTParams:
     def __init__(self):
         self.log = 0
@@ -39,3 +40,168 @@ def spectrumRegularize(f, params):
 def removeTrends(f, params):
     #still needs to be implemented
     return f
+
+def showTensorBoundaries(f,bounds_row,bounds_col):
+    [h,w] = f.shape
+    ff = np.fft.fft2(f)
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.imshow(np.log(np.abs(np.fft.fftshift(ff))),cmap = 'gray')
+    for i in range(0,len(bounds_row)):
+        plt.plot([h//2 + bounds_row[i]*h/np.pi/2,h//2 + bounds_row[i]*h/np.pi/2],[0,w-1],'r-')
+        plt.plot([h//2 - bounds_row[i]*h/np.pi/2,h//2 - bounds_row[i]*h/np.pi/2],[0,w-1],'r-')
+    for i in range(0,len(bounds_col)):
+        plt.plot([0,h-1],[w//2 + bounds_col[i]*w/np.pi/2,w//2 + bounds_col[i]*w/np.pi/2],'r-')
+        plt.plot([0,h-1],[w//2 - bounds_col[i]*w/np.pi/2, w//2 - bounds_col[i]*w/np.pi/2],'r-')
+    plt.show();
+def showCurveletBoundaries(f,option,bounds_scales,bounds_angles):
+    [h,w] = f.shape
+    ff = np.fft.fft2(f)
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    plt.imshow(np.log(np.abs(np.fft.fftshift(ff))),cmap = 'gray')
+    if option == 1:
+        #first plot scale bounds
+        for i in range(0,len(bounds_scales)):
+            rad = bounds_scales[i]*h/np.pi/2
+            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
+            ax.add_patch(circ)
+        #Then plot the angle bounds
+        for i in range(0,len(bounds_angles)): 
+            if abs(bounds_angles[i]) < np.pi/4: 
+                #Do first half of line
+                x0 = (1+bounds_scales[0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y0 = (1+bounds_scales[0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x1 = w-1
+                y1 = (h+w*np.tan(bounds_angles[i]))//2
+                plt.plot([x0,x1],[y0,y1],'r-')
+                #Do second half of line
+                x2 = (1-bounds_scales[0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y2 = (1-bounds_scales[0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x3 = 0
+                y3 = (h-w*np.tan(bounds_angles[i]))//2
+                plt.plot([x2,x3],[y2,y3],'r-')
+            else:
+                x0 = (1-bounds_scales[0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y0 = (1-bounds_scales[0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x1 = (w+h/np.tan(bounds_angles[i]))//2
+                y1 = h-1
+                plt.plot([x0,x1],[y0,y1],'r-')
+                x2 = (1+bounds_scales[0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y2 = (1+bounds_scales[0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x3 = (h-w/np.tan(bounds_angles[i]))//2
+                y3 = 0
+                plt.plot([x2,x3],[y2,y3],'r-')
+                
+                
+    elif option == 2:
+        #first plot scale bounds
+        for i in range(0,len(bounds_scales)):
+            rad = bounds_scales[i]*h/np.pi/2
+            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
+            ax.add_patch(circ)
+        #Then plot the angle bounds for each scale
+        for i in range(0,len(bounds_scales)-1):
+            for j in range(0,len(bounds_angles[i])): 
+                if abs(bounds_angles[i][j]) < np.pi/4: 
+                    #Do first half of line
+                    x0 = (1+bounds_scales[i]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y0 = (1+bounds_scales[i]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    x1 = (1+bounds_scales[i+1]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y1 = (1+bounds_scales[i+1]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    plt.plot([x0,x1],[y0,y1],'r-')
+                    #Do second half of line
+                    x2 = (1-bounds_scales[i]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y2 = (1-bounds_scales[i]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    x3 = (1-bounds_scales[i+1]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y3 = (1-bounds_scales[i+1]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    plt.plot([x2,x3],[y2,y3],'r-')
+                else:
+                    x0 = (1-bounds_scales[i]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y0 = (1-bounds_scales[i]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    x1 = (1-bounds_scales[i+1]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y1 = (1-bounds_scales[i+1]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    plt.plot([x0,x1],[y0,y1],'r-')
+    
+                    x2 = (1+bounds_scales[i]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y2 = (1+bounds_scales[i]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    x3 = (1+bounds_scales[i+1]*np.cos(bounds_angles[i][j])/np.pi)*(w//2+1)
+                    y3 = (1+bounds_scales[i+1]*np.sin(bounds_angles[i][j])/np.pi)*(h//2+1)
+                    plt.plot([x2,x3],[y2,y3],'r-')
+        #Then take care of last scale
+        for i in range(0,len(bounds_angles[-1])): 
+            if abs(bounds_angles[-1][i]) < np.pi/4: 
+                #Do first half of line
+                x0 = (1+bounds_scales[-1]*np.cos(bounds_angles[-1][i])/np.pi)*(w//2+1)
+                y0 = (1+bounds_scales[-1]*np.sin(bounds_angles[-1][i])/np.pi)*(h//2+1)
+                x1 = w-1
+                y1 = (h+w*np.tan(bounds_angles[-1][i]))//2
+                plt.plot([x0,x1],[y0,y1],'r-')
+                #Do second half of line
+                x2 = (1-bounds_scales[-1]*np.cos(bounds_angles[-1][i])/np.pi)*(w//2+1)
+                y2 = (1-bounds_scales[-1]*np.sin(bounds_angles[-1][i])/np.pi)*(h//2+1)
+                x3 = 0
+                y3 = (h-w*np.tan(bounds_angles[-1][i]))//2
+                plt.plot([x2,x3],[y2,y3],'r-')
+            else:
+                x0 = (1-bounds_scales[-1]*np.cos(bounds_angles[-1][i])/np.pi)*(w//2+1)
+                y0 = (1-bounds_scales[-1]*np.sin(bounds_angles[-1][i])/np.pi)*(h//2+1)
+                x1 = (w+h/np.tan(bounds_angles[-1][i]))//2
+                y1 = h-1
+                plt.plot([x0,x1],[y0,y1],'r-')
+                x2 = (1+bounds_scales[-1]*np.cos(bounds_angles[-1][i])/np.pi)*(w//2+1)
+                y2 = (1+bounds_scales[-1]*np.sin(bounds_angles[-1][i])/np.pi)*(h//2+1)
+                x3 = (h-w/np.tan(bounds_angles[-1][i]))//2
+                y3 = 0
+                plt.plot([x2,x3],[y2,y3],'r-')
+    elif option == 3:
+        #plot first scale
+        rad = bounds_scales[0][0]*h/np.pi/2
+        circ = plt.Circle((h//2,w//2),rad,color = 'r', Fill = 0)
+        ax.add_patch(circ)
+        
+        #Plot angle bounds first
+        for i in range(0,len(bounds_angles)): 
+            if abs(bounds_angles[i]) < np.pi/4: 
+                #Do first half of line
+                x0 = (1+bounds_scales[0][0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y0 = (1+bounds_scales[0][0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x1 = w-1
+                y1 = (h+w*np.tan(bounds_angles[i]))//2
+                plt.plot([x0,x1],[y0,y1],'r-')
+                #Do second half of line
+                x2 = (1-bounds_scales[0][0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y2 = (1-bounds_scales[0][0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x3 = 0
+                y3 = (h-w*np.tan(bounds_angles[i]))//2
+                plt.plot([x2,x3],[y2,y3],'r-')
+            else:
+                x0 = (1-bounds_scales[0][0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y0 = (1-bounds_scales[0][0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x1 = (w+h/np.tan(bounds_angles[i]))//2
+                y1 = h-1
+                plt.plot([x0,x1],[y0,y1],'r-')
+                x2 = (1+bounds_scales[0][0]*np.cos(bounds_angles[i])/np.pi)*w//2
+                y2 = (1+bounds_scales[0][0]*np.sin(bounds_angles[i])/np.pi)*h//2
+                x3 = (h-w/np.tan(bounds_angles[i]))//2
+                y3 = 0
+                plt.plot([x2,x3],[y2,y3],'r-')
+        #For each angular sector, plot arc for scale
+        for i in range(0,len(bounds_angles)-1): 
+            for j in range(0,len(bounds_scales[i+1])):
+                rad = bounds_scales[i+1][j]*h/np.pi
+                arc = patches.Arc((h//2,w//2),rad,rad,0,bounds_angles[i]*180/np.pi,bounds_angles[i+1]*180/np.pi,color = 'r',Fill = 0)
+                ax.add_patch(arc)
+                arc2 = patches.Arc((h//2,w//2),rad,rad,0,180+bounds_angles[i]*180/np.pi,180+bounds_angles[i+1]*180/np.pi,color = 'r',Fill = 0)
+                ax.add_patch(arc2)
+        #Plot arcs for last angular sector
+        for i in range(0,len(bounds_scales[-1])):
+            rad = bounds_scales[-1][i]*h/np.pi
+            arc = patches.Arc((h//2,w//2),rad,rad,0,bounds_angles[-1]*180/np.pi,180+bounds_angles[1]*180/np.pi,color = 'r',Fill = 0)
+            ax.add_patch(arc)
+            arc2 = arc = patches.Arc((h//2,w//2),rad,rad,0,180+bounds_angles[-1]*180/np.pi,360+bounds_angles[1]*180/np.pi,color = 'r',Fill = 0)
+            ax.add_patch(arc2)
+    else:
+        return -1;
+    plt.show()
+    

@@ -74,12 +74,50 @@ def ewt2dCurvelet(f,params):
     
     elif params.option == 2:
         #Option 2: Computes Scales first, then angles 
-        print('To be implemented')
-        return -1
+        meanppff = np.fft.fftshift(np.mean(np.abs(ppff),axis = 1))
+        bounds_scales = ewt_boundariesDetect(meanppff[0:len(meanppff)//2+1],params)
+        bounds_angles = []
+        for i in range(0,len(bounds_scales)-1):
+            meanppff = np.mean(np.abs(ppff[int(bounds_scales[i]):int(bounds_scales[i+1]+1),:]),axis = 0)
+            bounds =  ewt_boundariesDetect(meanppff[0:len(meanppff)//2+1],params)
+            #append
+            bounds_angles.append(bounds*np.pi/np.ceil((len(meanppff)/2)) - np.pi*.75)
+            
+        #Do last linterval
+        meanppff = np.mean(np.abs(ppff[int(bounds_scales[-1]):,:]),axis = 0)
+        bounds =  ewt_boundariesDetect(meanppff[0:len(meanppff)//2+1],params)
+        #append
+        bounds_angles.append(bounds*np.pi/np.ceil((len(meanppff)/2)) - np.pi*.75)
+        #normalize scale bounds
+        bounds_scales *= np.pi/np.ceil((len(meanppff)/2))
+        
     elif params.option == 3:
-        #Option 2: Computes angles, then scales
-        print('To be implemented')
-        return -1
+        #Option 3: Computes angles, then scales
+        bounds_scales = []
+        #Get first scale
+        meanppff = np.fft.fftshift(np.mean(np.abs(ppff),axis = 1))
+        LL = len(meanppff)//2
+        bound0 = ewt_boundariesDetect(meanppff[LL:],params)[0]
+        bounds_scales.append([bound0*np.pi/LL])
+        bound0 = int(bound0)
+        #Compute mean-pseudo-polar fft for angles, excluding first scale to 
+        #find angle bounds
+        meanppff = np.mean(np.abs(ppff[ppff.shape[0]//2+bound0:,:]),0)
+        bounds_theta = ewt_boundariesDetect(meanppff,params)
+        bounds_angles = (bounds_theta-1)*np.pi/len(meanppff)-0.75*np.pi
+        bounds_theta = bounds_theta.astype(int)
+        #Now we find scale bounds at each angle
+        for i in range(0,len(bounds_theta)-1):
+            meanppff = np.mean(np.abs(ppff[LL+bound0:,bounds_theta[i]:bounds_theta[i+1]+1]),1)
+            bounds = ewt_boundariesDetect(meanppff,params)
+            bounds_scales.append((bounds+bound0)*np.pi/LL)
+        
+        #and also for the last angle
+        meanppff = np.mean(np.abs(ppff[LL+bound0:,bounds_theta[-1]:]),1)
+        meanppff += np.mean(np.abs(ppff[LL+bound0:,1:bounds_theta[0]+1]),1)
+        params.spectrumRegularize = 'closing'
+        bounds = ewt_boundariesDetect(meanppff,params)
+        bounds_scales.append((bounds+bound0)*np.pi/LL)
     else:
         print('invalid option')
         return -1
@@ -104,6 +142,7 @@ def iewt2dCurvelet(ewtc,mfb):
     return np.real(np.fft.ifft2(recon))
             
 def curveletFilterbank(bounds_scales,bounds_angles,h,w,option):
+
     if h%2 == 0:
         h += 1
         h_extended = 1
@@ -117,15 +156,17 @@ def curveletFilterbank(bounds_scales,bounds_angles,h,w,option):
     
     
     if option == 1:
+        #Scales and angles detected separately
+        
         #First, we calculate gamma for scales
         gamma_scales = np.pi
         for k in range(0,len(bounds_scales)-1):
             r = (bounds_scales[k+1] - bounds_scales[k])/(bounds_scales[k+1] + bounds_scales[k])
-            if r < gamma_scales and r > 1e-6:
+            if r < gamma_scales and r > 1e-16:
                 gamma_scales = r
         
         r = (np.pi - bounds_scales[-1])/(np.pi + bounds_scales[-1]) #check last bound
-        if r < gamma_scales and r > 1e-6:
+        if r < gamma_scales and r > 1e-16:
             gamma_scales = r
         if gamma_scales > bounds_scales[0]:     #check first bound
             gamma_scales = bounds_scales[0]
@@ -135,12 +176,12 @@ def curveletFilterbank(bounds_scales,bounds_angles,h,w,option):
         gamma_angles = 2*np.pi
         for k in range(0,len(bounds_angles)-1):
             r = (bounds_angles[k+1] - bounds_angles[k])/2
-            if r < gamma_angles and r > 1e-6:
+            if r < gamma_angles and r > 1e-16:
                 gamma_angles = r
         r = (bounds_angles[0] + np.pi - bounds_angles[-1])/2 #check extreme bounds (periodic)
-        if r < gamma_angles and r > 1e-6:
+        if r < gamma_angles and r > 1e-16:
             gamma_angles = r
-        gamma_angles *- (1 - 1/max(h,w)) #guarantees that we have strict inequality    
+        gamma_angles *= (1 - 1/max(h,w)) #guarantees that we have strict inequality    
         
         #construct matrices representing radius and angle value of each pixel
         radii = np.zeros([h,w])
@@ -152,6 +193,8 @@ def curveletFilterbank(bounds_scales,bounds_angles,h,w,option):
                 rj = (j+1.0 - w_center)*np.pi/w_center
                 radii[i,j] = np.sqrt(ri**2 + rj**2)
                 theta[i,j] = np.arctan2(ri,rj)
+                if theta[i,j] <-.75*np.pi:
+                    theta[i,j] += 2*np.pi
         
         mfb = []
         #construct scaling
@@ -184,28 +227,251 @@ def curveletFilterbank(bounds_scales,bounds_angles,h,w,option):
                                                    gamma_angles,gamma_scales))
         mfb.append(mfb_scale)
     elif option == 2:
-        print('not yet implemented')
-        return -1
+        #Scales detected first, and then angles
+        
+        #Get gamma for scales
+        gamma_scales = np.pi
+        for k in range(0,len(bounds_scales)-1):
+            r = (bounds_scales[k+1] - bounds_scales[k])/(bounds_scales[k+1] + bounds_scales[k])
+            if r < gamma_scales and r > 1e-16:
+                gamma_scales = r
+        
+        r = (np.pi - bounds_scales[-1])/(np.pi + bounds_scales[-1]) #check last bound
+        if r < gamma_scales and r > 1e-16:
+            gamma_scales = r
+        if gamma_scales > bounds_scales[0]:     #check first bound
+            gamma_scales = bounds_scales[0]
+        gamma_scales *= (1 - 1/max(h,w)) #guarantees that we have strict inequality
+        
+        #Get gammas for angles
+        gamma_angles = 2*np.pi*np.ones(len(bounds_scales))
+        for i in range(0,len(gamma_angles)):
+            for k in range(0,len(bounds_angles[i])-1):
+                r = (bounds_angles[i][k+1] - bounds_angles[i][k])/2
+                if r < gamma_angles[i] and r > 1e-16:
+                    gamma_angles[i] = r
+            r = (bounds_angles[i][0] + np.pi - bounds_angles[i][-1])/2 #check extreme bounds (periodic)
+            if r < gamma_angles[i] and r > 1e-16:
+                gamma_angles[i] = r
+        gamma_angles *= (1 - 1/max(h,w)) #guarantees that we have strict inequality    
+        
+        #construct matrices representing radius and angle value of each pixel
+        radii = np.zeros([h,w])
+        theta = np.zeros([h,w])
+        h_center = h//2 + 1; w_center = w//2+1
+        for i in range(0,h):
+            for j in range(0,w):
+                ri = (i+1.0 - h_center)*np.pi/h_center
+                rj = (j+1.0 - w_center)*np.pi/w_center
+                radii[i,j] = np.sqrt(ri**2 + rj**2)
+                theta[i,j] = np.arctan2(ri,rj)
+                if theta[i,j] <-.75*np.pi:
+                    theta[i,j] += 2*np.pi
+        
+        mfb = []
+        #construct scaling
+        mfb.append([ewt2d_curveletScaling(radii,bounds_scales[0],gamma_scales)])
+        
+        #construct angular wedges for all but last scales
+        for i in range(0,len(bounds_scales)-1):
+            mfb_scale = []           
+            for j in range(0,len(bounds_angles[i])-1):
+                mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                       bounds_angles[i][j],bounds_angles[i][j+1],
+                                                       bounds_scales[i],bounds_scales[i+1],
+                                                       gamma_angles[i],gamma_scales))
+            mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                       bounds_angles[i][-1],bounds_angles[i][0]+np.pi,
+                                                       bounds_scales[i],bounds_scales[i+1],
+                                                       gamma_angles[i],gamma_scales))
+            mfb.append(mfb_scale)
+        #construct angular wedges for last scales
+    
+        mfb_scale = []            
+        for j in range(0,len(bounds_angles[-1])-1):
+            mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[-1][j],bounds_angles[-1][j+1],
+                                                   bounds_scales[-1],np.pi*2,
+                                                   gamma_angles[-1],gamma_scales))
+        mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[-1][-1],bounds_angles[-1][0]+np.pi,
+                                                   bounds_scales[-1],np.pi*2,
+                                                   gamma_angles[-1],gamma_scales))
+        mfb.append(mfb_scale)
     elif option == 3:
-        print('not yet implemented')
-        return -1
+        # Angles detected first then scales per angles
+        
+        #compute gamma for theta
+        gamma_angles = 2*np.pi
+        for k in range(0,len(bounds_angles)-1):
+            r = (bounds_angles[k+1] - bounds_angles[k])/2
+            if r < gamma_angles and r > 1e-16:
+                gamma_angles = r
+        r = (bounds_angles[0] + np.pi - bounds_angles[-1])/2 #check extreme bounds (periodic)
+        if r < gamma_angles and r > 1e-16:
+            gamma_angles = r
+        gamma_angles *= (1 - 1/max(h,w)) #guarantees that we have strict inequality    
+        
+        #compute gamma for scales
+        gamma_scales = bounds_scales[0][0]/2
+        for i in range(1,len(bounds_angles)):
+            for j in range(0,len(bounds_scales[i])-1):
+                r = (bounds_scales[i][j+1] - bounds_scales[i][j])/(bounds_scales[i][j+1] + bounds_scales[i][j])
+                if r < gamma_scales and r > 1e-16:
+                    gamma_scales = r
+            r = (np.pi-bounds_scales[i][-1])/(np.pi+bounds_scales[i][-1])
+            if r < gamma_scales and r > 1e-16:
+                gamma_scales = r
+        gamma_scales *= (1-1/max(h,w))
+        
+        radii = np.zeros([h,w])
+        theta = np.zeros([h,w])
+        h_center = h//2 + 1; w_center = w//2+1
+        for i in range(0,h):
+            for j in range(0,w):
+                ri = (i+1.0 - h_center)*np.pi/h_center
+                rj = (j+1.0 - w_center)*np.pi/w_center
+                radii[i,j] = np.sqrt(ri**2 + rj**2)
+                theta[i,j] = np.arctan2(ri,rj)
+        
+        #Get empirical scaling function
+        mfb = []
+        mfb.append([ewt2d_curveletScaling(radii,bounds_scales[0][0],gamma_scales)])
+        
+        #for each angular sector, get empirical wavelet 
+        for i in range(0,len(bounds_angles)-1):
+            mfb_scale = []
+            #generate first scale
+            mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[i],bounds_angles[i+1],
+                                                   bounds_scales[0][0],bounds_scales[i+1][0],
+                                                   gamma_angles,gamma_scales))
+            #generate for other scales
+            for j in range(0,len(bounds_scales[i+1])-1):
+                mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[i],bounds_angles[i+1],
+                                                   bounds_scales[i+1][j],bounds_scales[i+1][j+1],
+                                                   gamma_angles,gamma_scales))
+            #generate for last scale
+            mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[i],bounds_angles[i+1],
+                                                   bounds_scales[i+1][-1],2*np.pi,
+                                                   gamma_angles,gamma_scales))
+            mfb.append(mfb_scale)
+        
+        #Generate for last angular sector
+        mfb_scale = []
+        mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[-1],bounds_angles[0]+np.pi,
+                                                   bounds_scales[0][0],bounds_scales[-1][0],
+                                                   gamma_angles,gamma_scales))
+        for i in range(0,len(bounds_scales[-1])-1):
+            mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[-1],bounds_angles[0]+np.pi,
+                                                   bounds_scales[-1][i],bounds_scales[-1][i+1],
+                                                   gamma_angles,gamma_scales))
+        mfb_scale.append(ewt2d_curveletWavelet(theta,radii,
+                                                   bounds_angles[-1]-np.pi,bounds_angles[0],
+                                                   bounds_scales[-1][-1],2*np.pi,
+                                                   gamma_angles,gamma_scales))
+        mfb.append(mfb_scale)
     else:
         print('invalid option')
         return -1
     
     if h_extended == 1: #if we extended the height of the image, trim
+        h -= 1
         for i in range(0,len(mfb)):
-            for j in range(0,len(mfb[0])):
+            for j in range(0,len(mfb[i])):
                 mfb[i][j] = mfb[i][j][0:-1,:]
     if w_extended == 1: #if we extended the width of the image, trim
+        w -= 1
         for i in range(0,len(mfb)):
-            for j in range(0,len(mfb[0])):
+            for j in range(0,len(mfb[i])):
                 mfb[i][j] = mfb[i][j][:,0:-1]
     #invert the fftshift since filters are centered
     for i in range(0,len(mfb)):
         for j in range(0,len(mfb[i])):
             mfb[i][j] = np.fft.ifftshift(mfb[i][j])
-    #TO DO: Symmetrize the Nyquist frequencies for even size images
+    #resymmetrize for even images
+    if option < 3:
+        if h_extended == 1:
+            s = np.zeros(w)
+            if w%2 == 0:
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][h//2, 1:w//2] += mfb[-1][j][h//2, -1:w//2:-1]
+                    mfb[-1][j][h//2, w//2+1:] = mfb[-1][j][h//2, w//2-1:0:-1]
+                    s += mfb[-1][j][h//2,:]**2
+                #normalize for tight frame
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][h//2, 1:w//2] /= np.sqrt(s[1:w//2])
+                    mfb[-1][j][h//2, w//2+1:] /= np.sqrt(s[w//2+1:])
+            else:
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][h//2, 0:w//2] += mfb[-1][j][h//2, -1:w//2:-1]
+                    mfb[-1][j][h//2, w//2+1:] = mfb[-1][j][h//2, w//2-1::-1]
+                    s += mfb[-1][j][h//2,:]**2
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][h//2,0:w//2]  /= np.sqrt(s[0:w//2])
+                    mfb[-1][j][h//2,w//2+1:] /= np.sqrt(s[w//2+1:])
+        if w_extended == 1:
+            s = np.zeros(h)
+            if h%2 == 0:
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][1:h//2, w//2] += mfb[-1][j][-1:h//2:-1, w//2]
+                    mfb[-1][j][h//2+1:, w//2] = mfb[-1][j][h//2-1:0:-1, w//2]
+                    s += mfb[-1][j][:, w//2]**2
+                #normalize for tight frame
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][1:h//2, w//2] /= np.sqrt(s[1:h//2])
+                    mfb[-1][j][h//2+1:, w//2] /= np.sqrt(s[h//2+1:]) 
+            else:
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][0:h//2, w//2] += mfb[-1][j][-1:h//2:-1, w//2]
+                    mfb[-1][j][h//2+1:, w//2] = mfb[-1][j][h//2-1::-1, w//2]
+                    s += mfb[-1][j][:, w//2]**2
+                for j in range(0,len(mfb[-1])):
+                    mfb[-1][j][0:h//2, w//2] /= s[0:h//2]
+                    mfb[-1][j][h//2+1:, w//2] /= s[h//2+1:]
+    else:
+        if h_extended == 1:
+            s = np.zeros(w)
+            if w%2 == 0:
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][h//2, 1:w//2] += mfb[j][-1][h//2, -1:w//2:-1]
+                    mfb[j][-1][h//2, w//2+1:] = mfb[j][-1][h//2, w//2-1:0:-1]
+                    s += mfb[j][-1][h//2,:]**2
+                #normalize for tight frame
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][h//2, 1:w//2] /= np.sqrt(s[1:w//2])
+                    mfb[j][-1][h//2, w//2+1:] /= np.sqrt(s[w//2+1:])
+            else:
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][h//2, 0:w//2] += mfb[j][-1][h//2, -1:w//2:-1]
+                    mfb[j][-1][h//2, w//2+1:] = mfb[j][-1][h//2, w//2-1::-1]
+                    s += mfb[j][-1][h//2,:]**2
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][h//2,0:w//2]  /= np.sqrt(s[0:w//2])
+                    mfb[j][-1][h//2,w//2+1:] /= np.sqrt(s[w//2+1:])
+        if w_extended == 1:
+            s = np.zeros(h)
+            if h%2 == 0:
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][1:h//2, w//2] += mfb[j][-1][-1:h//2:-1, w//2]
+                    mfb[j][-1][h//2+1:, w//2] = mfb[j][-1][h//2-1:0:-1, w//2]
+                    s += mfb[j][-1][:, w//2]**2
+                #normalize for tight frame
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][1:h//2, w//2] /= np.sqrt(s[1:h//2])
+                    mfb[j][-1][h//2+1:, w//2] /= np.sqrt(s[h//2+1:]) 
+            else:
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][0:h//2, w//2] += mfb[j][-1][-1:h//2:-1, w//2]
+                    mfb[j][-1][h//2+1:, w//2] = mfb[j][-1][h//2-1::-1, w//2]
+                    s += mfb[j][-1][:, w//2]**2
+                for j in range(0,len(mfb)):
+                    mfb[j][-1][0:h//2, w//2] /= s[0:h//2]
+                    mfb[j][-1][h//2+1:, w//2] /= s[h//2+1:]
     return mfb
 
 def ewt2d_curveletScaling(radii, bound, gamma):

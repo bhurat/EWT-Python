@@ -1,23 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun  8 16:15:58 2020
-
-@author: bazzz
-"""
 import numpy as np
 from scipy.special import iv, erf, erfinv
 from ewt.utilities import *
 
+"""
+ewt_boundariesDetect(absf, params)
+Adaptively detects boundaries in 1D magnitude Fourier spectrum
+Input:
+    absf    - magnitude Fourier spectrum
+    params  - various relevant parameters for EWT
+Output:
+    ymw     - resulting empirical wavelet 
+Author: Basile Hurat, Jerome Gilles"""
 def ewt_boundariesDetect(absf,params):
-    if params.log == 1:
+    if params.log == 1:     #apply log parameter
         absf = np.log(absf)
-    if params.removeTrends.lower() != 'none':
+    if params.removeTrends.lower() != 'none':   #apply removeTrend parameter
         absf = removeTrends(absf,params)
-    if params.spectrumRegularize.lower() != 'none':
-        absf = spectrumRegularize(absf)
+    if params.spectrumRegularize.lower() != 'none': #apply spectrumRegularize parameter
+        absf = spectrumRegularize(absf,params)
+    
+    #Apply gaussian scale-space
     plane = GSS(absf)
+    #Get persistence (lengths) and indices of minima
     [lengths, indices] = lengthScaleCurve(plane)
     
+    #apply chosen thresholding method
     if params.typeDetect.lower() == 'otsu':    
         thresh = otsu(lengths)
         bounds = indices[lengths >= thresh]
@@ -34,8 +41,18 @@ def ewt_boundariesDetect(absf,params):
         clusters = ewtkmeans(lengths,1000)
         upper_cluster = clusters[lengths == max(lengths)]
         bounds = indices[clusters == upper_cluster]        
+        
     return bounds
 
+"""
+GSS(f)
+performs discrete 1D scale-space of signal and tracks minima through 
+scale-space
+Input:
+    f       - input signal
+Output:
+    plane   - 2D plot of minima paths through scale-space representation of f
+Author: Basile Hurat, Jerome Gilles"""
 def GSS(f):
     t = 0.5
     n = 3
@@ -55,6 +72,7 @@ def GSS(f):
         f = f[n:-n]
         plane[:,i] = localmin(f)
     return plane
+
 
 def lengthScaleCurve(plane):
     [w,num_iter] = plane.shape
@@ -134,13 +152,14 @@ def localmin(f):
                 flat_count += 1
                 j += 1
                 flag = 1
-                print(minima)
+                
             if flag == 1:
                 minima[j - np.floor(flat_count/2).astype(int)] = 1
                 minima[j] = 0
                 i = j
         i += 1
-                
+    minima[0] = 0;
+    minima[-1] = 0;
     return minima
 
 def otsu(lengths):
