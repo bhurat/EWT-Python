@@ -6,7 +6,7 @@ ewt1d(f,params)
 Performs the 1D empirical wavelet transform
 Input:
     f       - 1D signal
-    params  - parameters related to empirical wavelet transform
+    params  - parameters for EWT (see utilities)
 Output:
     ewt     - empirical wavelet coefficients
     mfb     - empirical wavelet filter bank
@@ -18,15 +18,17 @@ def ewt1d(f,params):
     
     #performs boundary detection
     bounds = ewt_boundariesDetect(np.abs(ff[0:int(np.round(len(ff)/2))]),params)
+    bounds = ewt_boundariesDetect(np.abs(ff),params)
+    print(bounds)
     bounds = bounds*np.pi/(np.round(len(ff)/2))
     
     #From bounds, construct filter bank
     mfb = ewt_LP_Filterbank(bounds,len(ff))
     
     #Filter to get empirical wavelet coefficients
-    ewt = np.zeros([len(ff), len(bounds)+1])
+    ewt = []
     for i in range(0,len(bounds)+1):
-        ewt[:,i]=np.real(np.fft.ifft(mfb[:,i]*ff));
+        ewt.append(np.real(np.fft.ifft(mfb[i]*ff)));
     return [ewt, mfb, bounds]
 
 """
@@ -41,9 +43,9 @@ Output:
 Author: Basile Hurat, Jerome Gilles"""
 
 def iewt1d(ewt,mfb):
-    rec = np.zeros(len(ewt[:,0]))
-    for i in range(0,len(ewt[0,:])):
-        rec += np.real(np.fft.ifft(np.fft.fft(ewt[:,i])*mfb[:,i]))
+    rec = np.zeros(len(ewt[0]))
+    for i in range(0,len(ewt)):
+        rec += np.real(np.fft.ifft(np.fft.fft(ewt[i])*mfb[i]))
     return rec
 
 """
@@ -61,7 +63,7 @@ def ewt_LP_Filterbank(bounds,N):
     gamma = 1;
     for i in range(0,len(bounds)-1):
         r = (bounds[i+1] - bounds[i])/(bounds[i+1]+bounds[i])
-        if r < gamma and r > 1e-6:
+        if r < gamma and r > 1e-16:
             gamma = r
     gamma *= (1-1/N) #ensures strict inequality
     
@@ -69,11 +71,11 @@ def ewt_LP_Filterbank(bounds,N):
     aw = np.arange(0,2*np.pi-1/N,2*np.pi/N)
     aw[np.floor(N/2).astype(int):] -= 2*np.pi 
     aw = np.abs(aw)
-    filterbank = np.zeros([N, len(bounds)+1])
-    filterbank[:,0] = ewt_LP_Scaling(bounds[0],aw,gamma,N)
+    filterbank = []
+    filterbank.append(ewt_LP_Scaling(bounds[0],aw,gamma,N))
     for i in range(1,len(bounds)):
-        filterbank[:,i] = ewt_LP_Wavelet(bounds[i-1],bounds[i], aw, gamma, N)
-    filterbank[:,len(bounds)] = ewt_LP_Wavelet(bounds[len(bounds)-1],np.pi,aw,gamma,N)
+        filterbank.append(ewt_LP_Wavelet(bounds[i-1],bounds[i], aw, gamma, N))
+    filterbank.append(ewt_LP_Wavelet(bounds[-1],np.pi,aw,gamma,N))
     return filterbank
 
 """
@@ -93,7 +95,7 @@ def ewt_LP_Scaling(w1,aw,gamma,N):
     an = 1/(2*gamma*w1) #scaling in beta function
 
     yms = 1.0*(aw <= mbn) #if less than lower bound, equals 1
-    yms += (aw > mbn)*(aw <= pbn)*np.cos(np.pi*EWT_beta(an*(aw - mbn))/2) #Transition area
+    yms += (aw > mbn)*(aw <= pbn)*np.cos(np.pi*ewt_beta(an*(aw - mbn))/2) #Transition area
     return yms
 
 """
@@ -122,20 +124,21 @@ def ewt_LP_Wavelet(wn,wm,aw,gamma,N):
     else:
         a=0;
     
-    mbm = wm - gamma*abs(wm - a*2*np.pi); #beginning of second transition
-    pbm = wm + gamma*abs(wm - a*2*np.pi); #end of second transition
-    am = 1/(2*gamma*abs(wm - a*2*np.pi));  #scaling in second transition's beta function
+    mbm = wm - gamma*abs(wm - a*2*np.pi) #beginning of second transition
+    pbm = wm + gamma*abs(wm - a*2*np.pi) #end of second transition
+    am = 1/(2*gamma*abs(wm - a*2*np.pi))  #scaling in second transition's beta function
     
-    ymw = 1.0*(aw >= pbn)*(aw<= mbm) #equals 1 between transition areas
-    ymw += (aw > mbn)*(aw < pbn)*np.sin(np.pi*EWT_beta(an*(aw - mbn))/2) #1st transition area
+    ymw = 1.0*(aw > mbn)*(aw< pbm) #equals 1 between transition areas
+    case = (aw > mbn)*(aw < pbn)
+    ymw[case] *= np.sin(np.pi*ewt_beta(an*(aw[case] - mbn))/2) #1st transition area
     if wm < np.pi:
-        ymw += (aw > mbm)*(aw < pbm)*np.cos(np.pi*EWT_beta(am*(aw - mbm))/2) #2nd transition area
-    else:
-        ymw += (aw > mbm)*(aw < pbm)*1.0
+        case = (aw > mbm)*(aw < pbm)
+        ymw[case] *= np.cos(np.pi*ewt_beta(am*(aw[case] - mbm))/2) #2nd transition area
+        
     return ymw
 
 """
-EWT_beta(x)
+ewt_beta(x)
 Beta function that is used in empirical wavelet and empirical scaling function
 construction
 Input:

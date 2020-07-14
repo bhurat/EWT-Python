@@ -7,11 +7,11 @@ ewt_boundariesDetect(absf, params)
 Adaptively detects boundaries in 1D magnitude Fourier spectrum
 Input:
     absf    - magnitude Fourier spectrum
-    params  - various relevant parameters for EWT
+    params  - parameters for EWT (see utilities)
 Output:
     ymw     - resulting empirical wavelet 
 Author: Basile Hurat, Jerome Gilles"""
-def ewt_boundariesDetect(absf,params):
+def ewt_boundariesDetect(absf,params,sym = 1):
     if params.log == 1:     #apply log parameter
         absf = np.log(absf)
     if params.removeTrends.lower() != 'none':   #apply removeTrend parameter
@@ -23,6 +23,10 @@ def ewt_boundariesDetect(absf,params):
     plane = GSS(absf)
     #Get persistence (lengths) and indices of minima
     [lengths, indices] = lengthScaleCurve(plane)
+    if sym == 1:
+        lengths = lengths[indices < len(absf)/2-1] #Halve the spectrum
+        indices= indices[indices < len(absf)/2-1] #Halve the spectrum
+        
     
     #apply chosen thresholding method
     if params.typeDetect.lower() == 'otsu':    
@@ -56,7 +60,7 @@ Author: Basile Hurat, Jerome Gilles"""
 def GSS(f):
     t = 0.5
     n = 3
-    num_iter = np.max([np.ceil(len(f)/n),3])
+    num_iter = 4*np.max([np.ceil(len(f)/n),3])
     #First, define scale-space kernel (discrete Gaussian kernel)
     ker = np.exp(-t)*iv(np.arange(-n,n+1),t)
     ker = ker/np.sum(ker)
@@ -71,9 +75,21 @@ def GSS(f):
         f = np.convolve(f,ker,'same')
         f = f[n:-n]
         plane[:,i] = localmin(f)
+        if np.sum(plane[:,i]) <= 2:
+            break
     return plane
 
-
+"""
+lengthScaleCurve(plane)
+Given the 2D plot of minima paths in scale-space representation, this function
+extracts the persistence of each minima, as well as their starting position in 
+signal
+Input:
+    plane   - 2D plot of minima paths through scale-space representation
+Output:
+    lengths - persistence of each minimum
+    indices - position of each minimum
+Author: Basile Hurat, Jerome Gilles"""
 def lengthScaleCurve(plane):
     [w,num_iter] = plane.shape
     num_curves = np.sum(plane[:,0])
@@ -111,6 +127,17 @@ def lengthScaleCurve(plane):
 
     return [lengths, indices]
 
+"""
+localmin(f):
+Givan an array f, returns a boolean array that represents positions of local 
+minima - Note, handles minima plateaus by assigning all points on plateau as 
+minima
+Input:
+    f       - an array of numbers
+Output:
+    minima  - boolean array of same length as f, which represents positions of 
+            local minima in f
+Author: Basile Hurat, Jerome Gilles"""
 def localmin(f):
     w = len(f)
     minima = np.zeros(w)
@@ -158,10 +185,40 @@ def localmin(f):
                 minima[j] = 0
                 i = j
         i += 1
+    minima = removePlateaus(minima)
     minima[0] = 0;
     minima[-1] = 0;
     return minima
 
+def removePlateaus(x):
+    w = len(x); i = 0; flag = 0;
+    while i < w:
+        if x[i] == 1:
+            plateau = 1
+            while 1:
+                if i+plateau < w and x[i+plateau] == 1:
+                    plateau += 1
+                    print(f'{i}, plateau = {plateau}')
+                else:
+                    flag = plateau > 1
+                    break
+        if flag:
+            x[i:i+plateau] = 0
+            x[i+plateau//2] = 1
+            i = i+plateau
+        else:
+            i += 1
+    return x
+    
+"""
+otsu(lengths)
+2-class classification method which minimizes the inter-class variance of the 
+class probability and the respective class averages
+Input:
+    lengths - array to be thresholded or classified
+Output:
+    thresh  - detected threshold that separates the two classes
+Author: Basile Hurat, Jerome Gilles"""
 def otsu(lengths):
     hist_max = np.max(lengths); 
     histogram = np.histogram(lengths,hist_max.astype(int))[0]
@@ -192,19 +249,45 @@ def otsu(lengths):
             thresh = i
     return thresh
 
+"""
+empiricalLaw(lengths)
+2-class classification method which classifies by considering lengths which are
+epsilon meaningful for an empirical law. 
+Input:
+    lengths     - array to be thresholded or classified
+Output:
+    meaningful  - boolean array of where meaningful lengths are
+Author: Basile Hurat, Jerome Gilles"""
 def empiricalLaw(lengths):
     hist_max = np.max(lengths); 
     histogram = np.histogram(lengths,hist_max.astype(int))[0]
     hist_normalized = histogram/np.sum(histogram) #normalize
     Q = hist_normalized.cumsum()
-    thresh = np.where(Q > (1 - 1/len(lengths)))[0][0]+1
-    return thresh
+    meaningful = np.where(Q > (1 - 1/len(lengths)))[0][0]+1
+    return meaningful
     
+"""
+halfNormal(lengths)
+2-class classification method which classifies by considering lengths which are
+epsilon-meaningful for a half-normal law fitted to the data. 
+Input:
+    lengths     - array to be thresholded or classified
+Output:
+    thresh  - detected threshold that separates the two classes
+Author: Basile Hurat, Jerome Gilles"""
 def halfNormal(lengths):
     sigma=np.sqrt(np.pi)*np.mean(lengths);
     thresh = sigma*erfinv(erf(np.max(lengths)/sigma) - 1/len(lengths))
     return thresh
 
+"""
+ewtkmeans(lengths)
+1D k-means clustering function for 2 class classification
+Input:
+    lengths     - array to be clustered or classified
+Output:
+    closest  - label array that gives final classification 
+Author: Basile Hurat, Jerome Gilles"""
 def ewtkmeans(lengths,maxIter):
     k = 2
     centroids = np.zeros(k)
