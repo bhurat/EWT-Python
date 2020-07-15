@@ -19,7 +19,6 @@ def ewt1d(f,params):
     #performs boundary detection
     bounds = ewt_boundariesDetect(np.abs(ff[0:int(np.round(len(ff)/2))]),params)
     bounds = ewt_boundariesDetect(np.abs(ff),params)
-    print(bounds)
     bounds = bounds*np.pi/(np.round(len(ff)/2))
     
     #From bounds, construct filter bank

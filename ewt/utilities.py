@@ -75,6 +75,7 @@ def showewt1dBoundaries(f,bounds):
     ff = np.abs(np.fft.fft(f))
     h = np.max(ff)
     plt.figure()
+    plt.suptitle('1D EWT Boundaries')
     plt.plot(np.arange(0,np.pi+1/(len(ff)/2),np.pi/(len(ff)/2)),ff[0:len(ff)//2+1])
     for i in range(0,len(bounds)):
         plt.plot([bounds[i], bounds[i]],[0,h-1],'r--')
@@ -91,6 +92,7 @@ def show2DTensorBoundaries(f,bounds_row,bounds_col):
     [h,w] = f.shape
     ff = np.fft.fft2(f)
     fig = plt.figure()
+    plt.suptitle('2D EWT Tensor Boundaries')
     ax = fig.add_subplot(1,1,1)
     plt.imshow(np.log(np.abs(np.fft.fftshift(ff))),cmap = 'gray')
     
@@ -108,6 +110,7 @@ def show2DLPBoundaries(f,bounds_scales):
     [h,w] = f.shape
     ff = np.fft.fft2(f)
     fig = plt.figure()
+    plt.suptitle('2D EWT Littlewood-Paley or Ridgelet Boundaries')
     ax = fig.add_subplot(1,1,1)
     plt.imshow(np.log(np.abs(np.fft.fftshift(ff))),cmap = 'gray')
     
@@ -117,6 +120,7 @@ def show2DLPBoundaries(f,bounds_scales):
         circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
         ax.add_patch(circ)
     plt.show()
+
 """
 showCurveletBoundaries(f,option,bounds_scales,bounds_angles)
 Plots boundaries of 2D curvelet EWT on top of magnitude spectrum of image
@@ -130,6 +134,7 @@ def show2DCurveletBoundaries(f,option,bounds_scales,bounds_angles):
     [h,w] = f.shape
     ff = np.fft.fft2(f)
     fig = plt.figure()
+    plt.suptitle('2D EWT Curvelet Boundaries')
     ax = fig.add_subplot(1,1,1)
     plt.imshow(np.log(np.abs(np.fft.fftshift(ff))),cmap = 'gray')
     if option == 1: #scales and angles detected separately
@@ -277,3 +282,102 @@ def show2DCurveletBoundaries(f,option,bounds_scales,bounds_angles):
         return -1;
     plt.show()
     
+"""
+showEWT1DCoefficients(ewtc)
+Plots coefficients of the 1D ewt
+Input:
+    ewtc - 1D empirical wavelet coefficients gotten from the ewt1d function
+Author: Basile Hurat, Jerome Gilles"""
+def showEWT1DCoefficients(ewtc):
+    if len(ewtc) < 10:
+        fig = plt.figure()
+        fig.suptitle("1D EWT coefficients")
+        for i in range(0,len(ewtc)):
+            plt.subplot(len(ewtc),1,i+1)
+            plt.plot(ewtc[i])
+        plt.show()
+    else:
+        for i in range(0,len(ewtc)):
+            if i%10 == 0:
+                plt.figure()
+            plt.subplot(10,1,i%10 + 1)
+            plt.plot(ewtc[i])
+        plt.show()
+           
+"""
+showEWT2DCoefficients(ewtc)
+Plots coefficients of the 2D empirical wavelet transform
+Input:
+    ewtc        - 2D empirical wavelet coefficients 
+    ewt_type    - the transform used to get the empirical wavelet coefficent
+    option      - (optional) the curvelet option, should you need to specify
+Author: Basile Hurat, Jerome Gilles"""
+def showEWT2DCoefficients(ewtc,ewt_type,option = 1):
+    if ewt_type.lower() == 'tensor':
+        m = len(ewtc)
+        n = len(ewtc[0])
+        fig = plt.figure()
+        fig.suptitle("Tensor EWT coefficients")
+        for i in range(0,m):
+            for j in range(0,n):
+                plt.subplot(m,n,i*m+j+1)
+                plt.xticks([])
+                plt.yticks([])
+                plt.grid(False)
+                plt.imshow(ewtc[i][j],cmap = 'gray')
+                plt.xlabel(f'i = {i}, j = {j}')
+        plt.show()
+    if ewt_type.lower() == 'lp':
+        m = len(ewtc)
+        fig = plt.figure()
+        fig.suptitle("Littlewood-Paley EWT coefficients")
+        for i in range(0,m):
+            plt.subplot(np.ceil(np.sqrt(m)),np.ceil(np.sqrt(m)),i+1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(ewtc[i],cmap = 'gray')
+            plt.xlabel(f'i = {i}')
+        plt.show()
+    if ewt_type.lower() == 'ridgelet':
+        m = len(ewtc)
+        fig = plt.figure()
+        fig.suptitle("Ridgelet EWT coefficients")
+        for i in range(0,m):
+            plt.subplot(np.ceil(np.sqrt(m)),np.ceil(np.sqrt(m)),i+1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(ewtc[i],cmap = 'gray')
+            plt.xlabel(f'i = {i}')
+        plt.show()
+    if ewt_type.lower() == 'curvelet':
+        fig = plt.figure()
+        fig.suptitle("Curvelet EWT coefficient for scale 0")
+        plt.imshow(ewtc[0][0],cmap = 'gray')
+        if option < 3:
+            for i in range(1,len(ewtc)):
+                fig = plt.figure()
+                fig.suptitle(f'Curvelet EWT coefficients for scale {i}')
+                m = len(ewtc[i])
+                for j in range(0,m):
+                    plt.subplot(np.ceil(np.sqrt(m)),np.ceil(np.sqrt(m)),j+1)
+                    plt.xticks([])
+                    plt.yticks([])
+                    plt.grid(False)
+                    plt.imshow(ewtc[i][j],cmap = 'gray')
+                    plt.xlabel(f'Angle {j}')
+            plt.show()
+        else:
+            for i in range(1,len(ewtc)):
+                fig = plt.figure()
+                fig.suptitle(f'Curvelet EWT coefficients for Angle {i}')
+                m = len(ewtc[i])
+                for j in range(0,m):
+                    plt.subplot(np.ceil(np.sqrt(m)),np.ceil(np.sqrt(m)),j+1)
+                    plt.xticks([])
+                    plt.yticks([])
+                    plt.grid(False)
+                    plt.imshow(ewtc[i][j],cmap = 'gray')
+                    plt.xlabel(f'Scale {j}')
+            plt.show()
