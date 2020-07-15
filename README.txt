@@ -6,6 +6,7 @@ Preprint available at ftp://ftp.math.ucla.edu/pub/camreport/cam13-33.pdf
 - J.Gilles, K. Heal, "A parameterless scale-space approach to find meaningful modes in histograms - Application to image and spectrum segmentation", International Journal of Wavelets, Multiresolution and Information Processing, Vol.12, No.6, 1450044-1--1450044-17, December 2014.
 Preprint available at ftp://ftp.math.ucla.edu/pub/camreport/cam14-05.pdf
 
+This package is a python implementation of the MATLAB EWT package by Jerome Gilles and includes some python implementations of functions (ppfft,ippfft,appfft,fracfft) found in the MATLAB PolarLab package by Michael Elad (https://elad.cs.technion.ac.il/software/).
 This toolbox is freely distributed and can be used without any charges for research purposes. 
 For commercial purposes, please contact me before. 
 
@@ -29,11 +30,12 @@ Currently Implemented
 		|-parameter struct
 		|-Spectrum Regularization
 		|-Functions to visualize boundaries 
+		|-Functions to visualize coefficients
 
 =======================
 To come in next version
 =======================
-|- Coefficient visualization
+|- Time-Frequency for 1D EWT
 ===============
 Needed Packages
 ===============
