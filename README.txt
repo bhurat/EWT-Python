@@ -21,19 +21,19 @@ Currently Implemented
 	|-2D EWT functions
 		|-Tensor ewt and iewt
 		|-Curvelet-1,2,3 ewt and iewt
+		|-Littlewood-Paley ewt and iewt
+		|-Ridgelet ewt and iewt
 	|-Boundaries
 		|-scale-space option with all thresholding methods
 	|-Utilities
 		|-parameter struct
 		|-Spectrum Regularization
-		|-Functions to visualize boundaries for Tensor and Curvelet ewt
+		|-Functions to visualize boundaries 
 
 =======================
 To come in next version
 =======================
-|-LP EWT 
-|-Utility (visualization) functions
-|-Comments
+|- Coefficient visualization
 ===============
 Needed Packages
 ===============
@@ -48,9 +48,9 @@ Organization
 	|-boundaries.py	: Functions needed for boundary detection (1d or 2d)
 	|-utilities.py	: Includes parameter struct and various utility functions, including visualization
 |-Tests
-	|-1d 			: 1d testing functions
-	|-2d			:2d testing functions
+	|-1D 			: 1d testing functions
+	|-2D			:2d testing functions
 |-Notebook Examples
-	|-1d ewt example
-|-test_EWT1D.py		:example for 1d
-|-test_EWT2D.py		:example for 2d
+	|-1D ewt example
+|-test_EWT1D.py		:example for 1D
+|-test_EWT2D.py		:example for 2D
