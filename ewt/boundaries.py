@@ -4,28 +4,174 @@ from ewt.utilities import *
 
 """
 ewt_boundariesDetect(absf, params)
-Adaptively detects boundaries in 1D magnitude Fourier spectrum
+Adaptively detects boundaries in 1D magnitude Fourier spectrum based on the 
+detection method chosen in params.detect
 Input:
     absf    - magnitude Fourier spectrum
     params  - parameters for EWT (see utilities)
 Output:
-    ymw     - resulting empirical wavelet 
+    bounds     - resulting boundaries in index domain
 Author: Basile Hurat, Jerome Gilles"""
 def ewt_boundariesDetect(absf,params,sym = 1):
-    if params.log == 1:     #apply log parameter
-        absf = np.log(absf)
-    if params.removeTrends.lower() != 'none':   #apply removeTrend parameter
-        absf = removeTrends(absf,params)
-    if params.spectrumRegularize.lower() != 'none': #apply spectrumRegularize parameter
-        absf = spectrumRegularize(absf,params)
     
+    if params.log == 1:     #apply log parameter
+        preproc = np.log(absf)
+    else:
+        preproc = np.copy(absf)
+    if params.removeTrends.lower() != 'none':   #apply removeTrend parameter
+        preproc = removeTrends(absf,params)
+    if params.spectrumRegularize.lower() != 'none': #apply spectrumRegularize parameter
+        preproc = spectrumRegularize(preproc,params)
+    
+    #Choose detection method
+    if params.detect == 'scalespace':
+        bounds = ewt_GSSDetect(preproc,params,sym)
+    elif params.detect == 'locmax':
+        if sym == 1:
+            bounds = ewt_localMaxBounds(preproc[0:len(preproc)//2], params.N)
+        else:
+            bounds = ewt_localMaxBounds(preproc, params.N)
+    elif params.detect == 'locmaxmin':
+        if sym == 1:
+            bounds = ewt_localMaxMinBounds(preproc[0:len(preproc)//2], params.N)
+        else:
+            bounds = ewt_localMaxMinBounds(preproc, params.N)
+    elif params.detect == 'locmaxminf':
+        if sym == 1:
+            bounds = ewt_localMaxMinBounds(preproc[0:len(preproc)//2], params.N,absf[0:len(absf)//2])
+        else:
+            bounds = ewt_localMaxMinBounds(preproc, params.N,absf)
+    elif params.detect == 'adaptivereg':
+        if sym == 1:
+            bounds = ewt_adaptiveBounds(preproc[0:len(preproc)//2], params.init_bounds)
+        else:
+            bounds = ewt_adaptiveBounds(preproc, params.init_bounds)        
+    elif params.detect == 'adaptive':
+        if sym == 1:
+            bounds = ewt_adaptiveBounds(preproc[0:len(preproc)//2], params.init_bounds,absf[0:len(absf)//2])
+        else:
+            bounds = ewt_adaptiveBounds(preproc, params.init_bounds,absf)
+    for i in range(0,len(bounds)):
+        if bounds[i] == 0:
+            bounds = np.delete(bounds,i)
+            break
+    return bounds
+
+"""
+ewt_localMaxBounds(f, N)
+Detects N highest maxima, and returns the midpoints between them as detected 
+boundaries
+Input:
+    f       - signal to detect maxima from (generally pre-processed magnitude spectrum)
+    N       - number of maxima to detect
+Output:
+    bounds  - resulting detected bounds in index domain
+Author: Basile Hurat, Jerome Gilles"""
+def ewt_localMaxBounds(f,N):
+    #Detect maxima
+    maxima = localmin(-f).astype(bool)
+    index = np.arange(0,len(maxima))
+    maxindex = index[maxima]
+    #If we have more than N, keep only N highest maxima values
+    if N < len(maxindex):
+        order = np.argsort(f[maxima])[-N:]  
+        maxindex = np.sort(maxindex[order])
+    else:
+        N = len(maxindex) - 1
+    #find midpoints
+    bounds = np.zeros(N)
+    bounds[0] = round(maxindex[0]/2)
+    for i in range(0,N-1):
+        bounds[i+1] = (maxindex[i] + maxindex[i+1])//2
+    return bounds 
+
+"""
+ewt_localMaxMinBounds(f, N,f_orig)
+Detects N highest maxima, and returns the lowest minima between them as detected 
+boundaries
+Input:
+    f       - signal to detect maxima and minima from (generally pre-processed 
+            magnitude spectrum)
+    N       - number of maxima to detect
+    f_orig  - (Optional) If given, detects minima from this instead of f
+Output:
+    bounds  - resulting detected bounds in index domain
+Author: Basile Hurat, Jerome Gilles"""
+def ewt_localMaxMinBounds(f,N,f_orig = []): 
+    #Get both maxima and minima of signal
+    maxima = localmin(-f).astype(bool)
+    if len(f_orig) == 0:
+        minima = localmin(f).astype(bool)
+    else:
+        minima = localmin(f_orig).astype(bool)
+    index = np.arange(0,len(maxima))
+    maxindex = index[maxima]
+    minindex = index[minima]
+    
+    #If we have more than N, keep only N highest maxima values
+    if N<len(maxindex):
+        order = np.argsort(f[maxima])[-N:]  
+        maxindex = np.sort(maxindex[order])
+    else:
+        N = len(maxindex) - 1
+    
+    bounds = np.zeros(N)
+    intervalmin = minindex[minindex < maxindex[0]]
+    if not len(intervalmin) == 0:
+        bounds[0] = intervalmin[np.argmin(f[intervalmin])]
+    
+    for i in range(0,N-1):
+        intervalmin = minindex[minindex > maxindex[i]]
+        intervalmin = intervalmin[intervalmin < maxindex[i+1]]
+        bounds[i+1] = intervalmin[np.argmin(f[intervalmin])]
+    return bounds
+
+"""
+ewt_adaptiveBounds(f, N,f_orig)
+Adaptively detect from set of initial bounds. Returns lowest minima within a 
+neighborhood of given bounds
+Input:
+    f               - signal to detect maxima and minima from (generally 
+                    pre-processed magnitude spectrum)
+    init_bounds0    - initial bounds to look at  detection
+    f_orig          - (Optional) If given, detects minima from this instead of f
+Output:
+    bounds          - resulting detected bounds in index domain
+Author: Basile Hurat, Jerome Gilles"""
+def ewt_adaptiveBounds(f,init_bounds0,f_orig = []):
+    if len(f_orig) != 0:
+        f = np.copy(f_orig)
+    init_bounds = []
+    init_bounds[:] = init_bounds0
+    init_bounds.insert(0,0)
+    init_bounds.append(len(f))
+    bounds = np.zeros(len(init_bounds)-1)
+    for i in range(0,len(init_bounds)-1):
+        neighb_low = round(init_bounds[i+1] - round(abs(init_bounds[i+1]-init_bounds[i]))/2)
+        neighb_high = round(init_bounds[i+1] + round(abs(init_bounds[i+1]-init_bounds[i]))/2)
+        bounds[i] = np.argmin(f[neighb_low:neighb_high+1])
+    return np.unique(bounds)
+
+"""
+ewt_GSSDetect(f, params,sym)
+Detects boundaries using scale-space. 
+Input:
+    f       - signal to detect boundaries between
+    params  - parameters for EWT (see utilities). Notably, the adaptive 
+            threshold from params.typeDetect
+    sym     - parameter whether or not the signal is symmetric. If true, 
+            returns bounds less than middle index
+Output:
+    bounds  - resulting detected bounds in index domain
+Author: Basile Hurat, Jerome Gilles"""  
+def ewt_GSSDetect(f,params,sym):
     #Apply gaussian scale-space
-    plane = GSS(absf)
+    plane = GSS(f)
     #Get persistence (lengths) and indices of minima
     [lengths, indices] = lengthScaleCurve(plane)
     if sym == 1:
-        lengths = lengths[indices < len(absf)/2-1] #Halve the spectrum
-        indices= indices[indices < len(absf)/2-1] #Halve the spectrum
+        lengths = lengths[indices < len(f)/2-1] #Halve the spectrum
+        indices= indices[indices < len(f)/2-1] #Halve the spectrum
         
     
     #apply chosen thresholding method
@@ -43,10 +189,11 @@ def ewt_boundariesDetect(absf,params,sym = 1):
         bounds = indices[lengths >= thresh]
     elif params.typeDetect.lower() == 'kmeans':
         clusters = ewtkmeans(lengths,1000)
-        upper_cluster = clusters[lengths == max(lengths)]
+        upper_cluster = clusters[lengths == max(lengths)][0]
         bounds = indices[clusters == upper_cluster]        
         
     return bounds
+
 
 """
 GSS(f)
@@ -60,7 +207,7 @@ Author: Basile Hurat, Jerome Gilles"""
 def GSS(f):
     t = 0.5
     n = 3
-    num_iter = 4*np.max([np.ceil(len(f)/n),3])
+    num_iter = 1*np.max([np.ceil(len(f)/n),3])
     #First, define scale-space kernel (discrete Gaussian kernel)
     ker = np.exp(-t)*iv(np.arange(-n,n+1),t)
     ker = ker/np.sum(ker)
@@ -126,6 +273,7 @@ def lengthScaleCurve(plane):
             current_curve += 1  
 
     return [lengths, indices]
+
 
 """
 localmin(f):

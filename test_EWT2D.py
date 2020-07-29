@@ -27,9 +27,10 @@ show_recon = 1  #show reconstruction
 
 
 params = ewt_params()
-params.log = 0
+params.log = 1
 transform = 'curvelet'
 params.option = 2
+params.detect = 'locmaxminf'
 
 params.typeDetect = 'otsu'
 f = np.genfromtxt('Tests/2d/texture.csv', delimiter=',')

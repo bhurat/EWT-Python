@@ -14,6 +14,9 @@ Parameters are as follow:
     sigmaFilter         - sigma for gaussian filter used in spectrum regularization
     typeDetect          - type of thresholding method for scale-space detection
     option              - Curvelet option for 2D Curvelet EWT
+    N
+    detect
+    init_bounds
 Author: Basile Hurat, Jerome Gilles"""
 class ewt_params:
     def __init__(self):
@@ -22,8 +25,12 @@ class ewt_params:
         self.spectrumRegularize = 'none'
         self.lengthFilter = 7
         self.sigmaFilter = 2
+        self.N = 10
+        self.detect = 'scalespace'
         self.typeDetect = 'otsu'
         self.option = 1
+        self.init_bounds = [4,8,13,30]
+        
 
 """
 spectrumRegularize(f,params)
