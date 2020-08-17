@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import gaussian
 import matplotlib.pyplot as plt
 from matplotlib import patches
-
+from ewt.boundaries import *
 """
 ewt_params()
 Parameter struct for empirical wavelet. Also sets defaults for each value.
@@ -22,6 +22,7 @@ class ewt_params:
     def __init__(self):
         self.log = 0
         self.removeTrends = 'none'
+        self.degree = 2
         self.spectrumRegularize = 'none'
         self.lengthFilter = 7
         self.sigmaFilter = 2
@@ -69,8 +70,74 @@ def spectrumRegularize(f, params):
     
 def removeTrends(f, params):
     #still needs to be implemented
-    return f
+    if params.removeTrends.lower() == 'plaw':
+        f = f/np.max(f)
+        lw = np.log(np.arange(1,len(f)+1))
+        
+        s = -np.sum(lw*np.log(f))/sum(lw**2)
+        f2 = f - np.arange(1,len(f)+1)**(-s)
+    elif params.removeTrends.lower() == 'poly':
+        p = np.polyfit(np.arange(0,len(f)),f,params.degree)
+        f2 = f - np.polyval(p,np.arange(0,len(f)))
+    elif params.removeTrends.lower() == 'morpho':
+        locmax = localmin(-f)
+        sizeEl = len(f)
+        n = 1
+        nplus = 1
+        while n < len(f):
+            if locmax[n] == 1:
+                if sizeEl > (n-nplus):
+                    sizeEl = n - nplus
+                nplus = n
+                n += 1
+            n += 1
+        f2 = f - (ewt_closing(f,sizeEl+1) + ewt_opening(f,sizeEl+1))/2;
+    elif params.removeTrends.lower() == 'tophat':
+        locmax = localmin(-f)
+        sizeEl = len(f)
+        n = 1
+        nplus = 1
+        while n < len(f):
+            if locmax[n] == 1:
+                if sizeEl > (n-nplus):
+                    sizeEl = n - nplus
+                nplus = n
+                n += 1
+            n += 1
+        f2 = f - ewt_opening(f,sizeEl+1);
+    elif params.removeTrends.lower() == 'opening':
+        locmax = localmin(-f)
+        sizeEl = len(f)
+        n = 1
+        nplus = 1
+        while n < len(f):
+            if locmax[n] == 1:
+                if sizeEl > (n-nplus):
+                    sizeEl = n - nplus
+                nplus = n
+                n += 1
+            n += 1
+        f2 = ewt_opening(f,sizeEl+1);
+    return f2
+    
+def ewt_opening(f,sizeEl):
+    ope = ewt_dilation(ewt_erosion(f,sizeEl),sizeEl)
+    return ope
+def ewt_closing(f,sizeEl):
+    clo = ewt_erosion(ewt_dilation(f,sizeEl),sizeEl)
+    return clo
 
+def ewt_erosion(f,sizeEl):
+    s = np.copy(f)
+    for x in range(0,len(f)):
+        s[x] = np.min(f[max(0,x-sizeEl):min(len(f),x+sizeEl)])
+    return s
+
+def ewt_dilation(f,sizeEl):
+    s = np.copy(f)
+    for x in range(0,len(f)):
+        s[x] = np.max(f[max(0,x-sizeEl):min(len(f),x+sizeEl)])
+    return s
 """
 showewt1dBoundaries(f,bounds)
 Plots boundaries of 1D EWT on top of magnitude spectrum of the signal
