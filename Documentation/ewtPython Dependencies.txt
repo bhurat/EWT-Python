@@ -1,0 +1,115 @@
+boundaries.py
+	- removeTrends
+	- spectrumRegularize
+	- ewt_GSSDetect
+		- GSS
+			- localmin
+			- removePlateaus	
+		- lengthScaleCurve
+		- otsu
+		- empriicalLaw
+		- halfNormal
+		- ewtkmeans
+	- ewt_localMaxBounds
+	- ewt_localMaxMinBounds
+	- ewt_adaptiveBounds
+
+utilities
+	ewt_params
+	spectrumRegularize
+	removeTrends
+		- ewt_closing
+			- ewt_dilation
+			- ewt_erosion
+		- ewt_opening
+			- ewt_dilation
+			- ewt_erosion
+		- localmin
+	showewt1dBoundaries
+	show2DTensorBoundaries
+	show2DLPBoundaries
+	show2DCurveletBoundaries
+	showEWT1DCoefficients
+	ShowEWT2DCoefficients
+	
+
+ewt1d.py
+	ewt1d
+		- ewt_boundariesDetect
+		- ewt_LP_Filterbank
+	iewt1d
+	ewt_LP_Filterbank
+		- ewt_LP_Scaling
+			- ewt_beta
+		- ewt_LP_Wavelet
+			- ewt_beta
+		- ewt_LP_Scaling_Complex
+			- ewt_beta
+		- ewt_LP_Wavelet_Complex
+			- ewt_beta
+		- ewt_LP_Wavelet_ComplexLow
+			- ewt_beta
+		- ewt_LP_Wavelet_ComplexHigh
+			- ewt_beta
+
+ewt2d.py
+	ewt2dTensor
+		- ewt_boundariesDetect
+		- ewt_LP_Filterbank
+	iewt2dTensor
+	
+	ewt2dLP
+		- ewt_boundariesDetect
+		-ewt2d_LPFilterbank
+			- ewt2d_LPscaling
+				- ewt_beta
+			- ewt2d_LPwavelet
+				- ewt_beta
+	iewt2dLP
+	
+
+	ewt2d_Ridgelet
+		- ppfft
+			- fracfft
+		- ewt_boundariesDetect
+		- ewt_LP_Filterbank
+		
+	iewt2dRidgelet
+		- ippfft
+			- appfft
+				- fracfft
+	ewt2dCurvelet
+		- ewt_boundariesDetect
+		- ewt2d_curveletFilterbank
+	iewt2dCurvelet
+	
+	ewt2d_curveletFilterbank
+		- ppfft
+			- fracfft
+		- ewt2d_curveletScaling
+			- ewt_beta
+		- ewt2d_curveletWavelet
+			- ewt_beta
+		-
+
+ewwt.py
+	ewt2dWatershed 
+	- ewt2d_watershedBoundariesDetect
+		- ewt_RemoveTrends
+		- ewt_spectrumRegularize
+		- ewwt_getMaxima
+			- gss2d
+				- local_min2d #DEPRECATED
+					- localmin Diags
+				- otsu
+				- empiricallaw
+				- halfNormal
+				- ewtkmeans
+		- ewwt_getBoundaries
+		
+	- ewt2d_arbitraryFilterbank
+		- ewt2d_arbitraryFilter
+			- chamferDist
+			
+
+	iewt2dWatershed

@@ -167,43 +167,61 @@ where f is the original signal, 'bounds' variables contain the bounds, and optio
 This section names each function contained within this package. We present them based on the files they are found in. Documentation for the individual functions can be found in block comments at the top of each function.
 
 ### ewt1d
-ewt1d
-iewt1d
-ewt_LP_Filterbank
-ewt_LP_Scaling
-ewt_LP_Wavelet
-ewt_LP_Scaling_Complex
-ewt_LP_Wavelet_ComplexLow
-ewt_LP_Wavelet_CompelxHigh
-ewt_beta
+* ewt1d
+* iewt1d
+* ewt_LP_Filterbank
+* ewt_LP_Scaling
+* ewt_LP_Wavelet
+* ewt_LP_Scaling_Complex
+* ewt_LP_Wavelet_ComplexLow
+* ewt_LP_Wavelet_CompelxHigh
+* ewt_beta
 
 ### ewt2d
+* ewt2dTensor
+* iewt2dTensor
+* ewt2dLP
+* iewt2dLP
+* ewt2d_LPFilterbank
+* ewt2d_LPscaling
+* ewt2d_LPwavelet
+* ewt2dRidgelet
+* iewt2dRidgelet
+* ewt2dCurvelet
+* iewt2dCurvelet
+* ewt2d_curveletFilterbank
+* ewt2d_curveletScaling
+* ewt2d_curveletWavelet
+* ppfft
+* fracfft
+* ippfft
+* appfft
 
 ### Boundaries
-ewt_boundariesDetect
-ewt_localMaxBounds
-ewt_localMaxMinBounds
-ewt_adaptiveBounds
-ewt_GSSDetect
-GSS
-lengthScaleCurve
-localmin
-removePlateaus
-otsu
-empiricalLaw
-halfNormal
-ewtkmeans
+* ewt_boundariesDetect
+* ewt_localMaxBounds
+* ewt_localMaxMinBounds
+* ewt_adaptiveBounds
+* ewt_GSSDetect
+* GSS
+* lengthScaleCurve
+* localmin
+* removePlateaus
+* otsu
+* empiricalLaw
+* halfNormal
+* ewtkmeans
 ### Utilities
-ewt_params (Class)
-spectrumRegularize
-removeTrends
-ewt_opening
-ewt_closing
-ewt_erosion
-ewt_dilation
-showewt1dBoundaries
-show2DTensorBoundaries
-show2DLPBoundaries
-show2DCurveletBoundaries
-showEWT1DCoefficients
-showEWT2DCoefficients
+* ewt_params (Class)
+* spectrumRegularize
+* removeTrends
+* ewt_opening
+* ewt_closing
+* ewt_erosion
+* ewt_dilation
+* showewt1dBoundaries
+* show2DTensorBoundaries
+* show2DLPBoundaries
+* show2DCurveletBoundaries
+* showEWT1DCoefficients
+* showEWT2DCoefficients
