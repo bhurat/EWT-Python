@@ -3,6 +3,8 @@ from scipy.signal import gaussian
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from ewt.boundaries import *
+from math import ceil 
+
 """
 ewt_params()
 Parameter struct for empirical wavelet. Also sets defaults for each value.
@@ -19,18 +21,26 @@ Parameters are as follow:
     init_bounds
 Author: Basile Hurat, Jerome Gilles"""
 class ewt_params:
-    def __init__(self):
-        self.log = 0
-        self.removeTrends = 'none'
-        self.degree = 2
-        self.spectrumRegularize = 'none'
-        self.lengthFilter = 7
-        self.sigmaFilter = 2
-        self.N = 10
-        self.detect = 'scalespace'
-        self.typeDetect = 'otsu'
-        self.option = 1
-        self.init_bounds = [4,8,13,30]
+    def __init__(self,log = 0,removeTrends = 'none',degree = 2, spectrumRegularize = 'none', lengthFilter = 7,sigmaFilter = 2, N = 10, detect = 'scalespace', typeDetect = 'otsu',                 option = 1, init_bounds = [4,8,13,30],t = 1, n = 6, niter = 4, includeCenter = 0, edges = 0, complex_ = 0, tau = 0.1):
+        self.log = log
+        self.removeTrends = removeTrends
+        self.degree = degree
+        self.spectrumRegularize = spectrumRegularize
+        self.lengthFilter = lengthFilter
+        self.sigmaFilter = sigmaFilter
+        self.N = N
+        self.detect = detect
+        self.typeDetect = typeDetect
+        self.option = option
+        self.init_bounds = init_bounds
+        self.t = t
+        self.n = n
+        self.niter = niter
+        self.includeCenter = includeCenter
+        self.edges = edges
+        self.complex = complex_
+        self.tau = tau
+    
         
 
 """
@@ -70,7 +80,7 @@ def spectrumRegularize(f, params):
     
 def removeTrends(f, params):
     #still needs to be implemented
-    if params.removeTrends.lower() == 'plaw':
+    if params.removeTrends.lower() == '    ':
         f = f/np.max(f)
         lw = np.log(np.arange(1,len(f)+1))
         
@@ -191,7 +201,7 @@ def show2DLPBoundaries(f,bounds_scales):
     #plot scale bounds
     for i in range(0,len(bounds_scales)):
         rad = bounds_scales[i]*h/np.pi/2
-        circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
+        circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', fill = 0)
         ax.add_patch(circ)
     plt.show()
 
@@ -215,7 +225,7 @@ def show2DCurveletBoundaries(f,option,bounds_scales,bounds_angles):
         #first plot scale bounds
         for i in range(0,len(bounds_scales)):
             rad = bounds_scales[i]*h/np.pi/2
-            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
+            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', fill = 0)
             ax.add_patch(circ)
         #Then plot the angle bounds
         for i in range(0,len(bounds_angles)): 
@@ -249,7 +259,7 @@ def show2DCurveletBoundaries(f,option,bounds_scales,bounds_angles):
         #first plot scale bounds
         for i in range(0,len(bounds_scales)):
             rad = bounds_scales[i]*h/np.pi/2
-            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', Fill = 0)
+            circ = plt.Circle((h//2+1,w//2+1),rad,color = 'r', fill = 0)
             ax.add_patch(circ)
         #Then plot the angle bounds for each scale
         for i in range(0,len(bounds_scales)-1):
@@ -308,7 +318,7 @@ def show2DCurveletBoundaries(f,option,bounds_scales,bounds_angles):
     elif option == 3: #angles detected first and scales detected per angle
         #plot first scale
         rad = bounds_scales[0][0]*h/np.pi/2
-        circ = plt.Circle((h//2,w//2),rad,color = 'r', Fill = 0)
+        circ = plt.Circle((h//2,w//2),rad,color = 'r', fill = 0)
         ax.add_patch(circ)
         
         #Plot angle bounds first
@@ -435,7 +445,7 @@ def showEWT2DCoefficients(ewtc,ewt_type,option = 1):
                 fig.suptitle(f'Curvelet EWT coefficients for scale {i}')
                 m = len(ewtc[i])
                 for j in range(0,m):
-                    plt.subplot(np.ceil(np.sqrt(m)),np.ceil(np.sqrt(m)),j+1)
+                    plt.subplot(ceil(np.sqrt(m)),ceil(np.sqrt(m)),j+1)
                     plt.xticks([])
                     plt.yticks([])
                     plt.grid(False)
