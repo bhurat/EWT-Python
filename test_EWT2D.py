@@ -21,21 +21,18 @@ from ewt.utilities import ewt_params
 plt.close('all')
 
 show_orig = 1   #show original image
-show_bounds = 1 #show bounds 
-show_coefs = 1  #show components
+show_bounds = 0 #show bounds 
+show_coefs = 0  #show components
 show_recon = 1  #show reconstruction 
 
 
 params = ewt_params()
-params.log = 1
-transform = 'curvelet'
-params.option = 2
-params.detect = 'locmaxminf'
 
+transform = 'curvelet'
 params.typeDetect = 'otsu'
 f = np.genfromtxt('Tests/2d/texture.csv', delimiter=',')
 
-f = (f-np.min(f))/(np.max(f)-np.min(f))
+#f = (f-np.min(f))/(np.max(f)-np.min(f))
 #f = f[0:-1,0:-1]
 
 if transform.lower() == 'tensor':

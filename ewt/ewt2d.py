@@ -8,13 +8,14 @@ import numpy as np
 from ewt.boundaries import *
 from ewt.ewt1d import *
 
+
 """
 ewt2dTensor(f,params)
 Given an image, function performs the 2D Tensor empirical wavelet transform - 
 This is a separable approach that contructs a filter bank based on detected 
 rectangular supports
 Input:
-    f           - vector x as an input
+    f           - 2D array containing signal
     params      - parameters for EWT (see utilities)
 Output:
     ewtc        - empirical wavelet coefficients
@@ -30,7 +31,7 @@ def ewt2dTensor(f,params):
     bounds_col = bounds_col*2*np.pi/len(meanfft)
     
     ewtc_col = []
-    mfb_col = ewt_LP_Filterbank(bounds_col,len(meanfft)) #construct filter bank
+    mfb_col = ewt_LP_Filterbank(bounds_col,len(meanfft),params.real) #construct filter bank
     for i in range(0,len(mfb_col)):
         filter_col = np.tile(mfb_col[i],[f.shape[1],1]).T #repeat down
         ewtc_col.append(np.real(np.fft.ifft(filter_col*ff,axis = 0))) #get coefficients,
@@ -42,7 +43,7 @@ def ewt2dTensor(f,params):
     bounds_row = bounds_row*2*np.pi/len(meanfft)
     
     ewtc = []
-    mfb_row = ewt_LP_Filterbank(bounds_row,len(meanfft))
+    mfb_row = ewt_LP_Filterbank(bounds_row,len(meanfft),params.real)
     for i in range(0,len(mfb_row)):
         ewtc_row = []
         filter_row = np.tile(mfb_row[i],[f.shape[0],1])
@@ -302,7 +303,7 @@ def ewt2dRidgelet(f,params):
     bounds_scales *= np.pi/np.ceil((len(meanppff)/2))
     
     #Construct 1D filterbank
-    mfb_1d = ewt_LP_Filterbank(bounds_scales,ppff.shape[0])
+    mfb_1d = ewt_LP_Filterbank(bounds_scales,ppff.shape[0],params.real)
     
     #filter out coefficients
     mfb = []
@@ -322,11 +323,13 @@ Output:
     recon   - reconstructed image
 Author: Basile Hurat, Jerome Gilles""" 
 
-def iewt2dRidgelet(ewtc,mfb):
+def iewt2dRidgelet(ewtc,mfb,isOdd = 0):
    ppff=1j*np.zeros(ewtc[0].shape);
    for i in range(0,len(mfb)):
        ppff += np.fft.fftshift(np.fft.fft(ewtc[i],axis = 0)*mfb[i],0)
    recon = np.real(ippfft(ppff,1e-10))
+   if isOdd:
+       recon = recon[0:-1,0:-1]
    return recon
 
 """
@@ -938,7 +941,7 @@ def fracfft(f,alpha,centered = 0):
     result = result[0:N]
     return result
 
-def ippfft(ppff,acc = 1e-3):
+def ippfft(ppff,acc = 1e-5):
     [h,w] = ppff.shape
     h = h//2
     
@@ -955,7 +958,6 @@ def ippfft(ppff,acc = 1e-3):
         mu=1/h
         recon=recon-mu*D
         count += 1
-        print(count)
     if count == 1000:
         print('could not converge during inverse pseudo-polar fft')
     return recon

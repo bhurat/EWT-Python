@@ -21,7 +21,7 @@ Parameters are as follow:
     init_bounds
 Author: Basile Hurat, Jerome Gilles"""
 class ewt_params:
-    def __init__(self,log = 0,removeTrends = 'none',degree = 2, spectrumRegularize = 'none', lengthFilter = 7,sigmaFilter = 2, N = 10, detect = 'scalespace', typeDetect = 'otsu',                 option = 1, init_bounds = [4,8,13,30],t = 1, n = 6, niter = 4, includeCenter = 0, edges = 0, complex_ = 0, tau = 0.1):
+    def __init__(self,log = 0,removeTrends = 'none',degree = 2, spectrumRegularize = 'none', lengthFilter = 7,sigmaFilter = 2, N = 10, detect = 'scalespace', typeDetect = 'otsu',                 option = 1, init_bounds = [4,8,13,30],t = 1, n = 6, niter = 4, includeCenter = 0, edges = 0, real = 1, tau = 0.1):
         self.log = log
         self.removeTrends = removeTrends
         self.degree = degree
@@ -38,7 +38,7 @@ class ewt_params:
         self.niter = niter
         self.includeCenter = includeCenter
         self.edges = edges
-        self.complex = complex_
+        self.real = real
         self.tau = tau
     
         
