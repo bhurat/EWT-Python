@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+import numpy as np
+from scipy.special import iv
+import matplotlib.pyplot as plt
+from ewt.ewt2d import *
+from ewt.utilities import ewt_params
+
+
 """
 Created on Wed Jun 10 15:09:30 2020
 Generates the results given by various 2D empirical wavelet transforms, which 
@@ -11,12 +17,6 @@ Curvelets Revisited" submitted at SIAM Journal on Imaging Sciences. 2013
 Feel free to try with your own images and change parameters. 
 @author: Basile Hurat
 """
-
-import numpy as np
-from scipy.special import iv
-import matplotlib.pyplot as plt
-from ewt.ewt2d import *
-from ewt.utilities import ewt_params
 
 plt.close('all')
 
@@ -36,28 +36,28 @@ f = np.genfromtxt('Tests/2d/texture.csv', delimiter=',')
 #f = f[0:-1,0:-1]
 
 if transform.lower() == 'tensor':
-    [ewtc, mfb_row, mfb_col,bounds_row, bounds_col] = ewt2dTensor(f,params)
+    [ewtc, mfb_row, mfb_col, bounds_row, bounds_col] = ewt2dTensor(f, params)
 elif transform.lower() == 'lp':
-    [ewtc, mfb, bounds_scales] = ewt2dLP(f,params)
+    [ewtc, mfb, bounds_scales] = ewt2dLP(f, params)
 elif transform.lower() == 'ridgelet':
-    [ewtc, mfb, bounds_scales] = ewt2dRidgelet(f,params)
+    [ewtc, mfb, bounds_scales] = ewt2dRidgelet(f, params)
 elif transform.lower() == 'curvelet':
-    [ewtc, mfb, bounds_scales, bounds_angles] = ewt2dCurvelet(f,params)
+    [ewtc, mfb, bounds_scales, bounds_angles] = ewt2dCurvelet(f, params)
 
 if show_orig == 1:
-    plt.imshow(f,cmap = 'gray')
+    plt.imshow(f, cmap = 'gray')
     plt.suptitle('Original image')
     plt.show()
 
 if show_bounds == 1:
     if transform.lower() == 'tensor':
-        show2DTensorBoundaries(f,bounds_row,bounds_col)
+        show2DTensorBoundaries(f, bounds_row, bounds_col)
     elif transform.lower() == 'lp':
-        show2DLPBoundaries(f,bounds_scales)
+        show2DLPBoundaries(f, bounds_scales)
     elif transform.lower() == 'ridgelet':
-        show2DLPBoundaries(f,bounds_scales)
+        show2DLPBoundaries(f, bounds_scales)
     elif transform.lower() == 'curvelet':
-        show2DCurveletBoundaries(f,params.option,bounds_scales,bounds_angles)
+        show2DCurveletBoundaries(f, params.option, bounds_scales, bounds_angles)
 
 if show_coefs == 1:
     showEWT2DCoefficients(ewtc, transform)
@@ -66,13 +66,13 @@ if show_recon == 1:
     if transform.lower() == 'tensor':
         recon = iewt2dTensor(ewtc, mfb_row, mfb_col)
     elif transform.lower() == 'lp':
-        recon = iewt2dLP(ewtc,mfb)
+        recon = iewt2dLP(ewtc, mfb)
     elif transform.lower() == 'ridgelet':
-        recon = iewt2dRidgelet(ewtc,mfb)
+        recon = iewt2dRidgelet(ewtc, mfb)
     elif transform.lower() == 'curvelet':
         recon = iewt2dCurvelet(ewtc, mfb)
-    print(f'recon difference: {np.sum((recon - f)**2)}')
+    print(f'recon difference: {np.sum((recon - f) ** 2)}')
     plt.figure()
     plt.suptitle('Reconstructed image')
-    plt.imshow(recon,cmap = 'gray')
+    plt.imshow(recon, cmap = 'gray')
     plt.show()

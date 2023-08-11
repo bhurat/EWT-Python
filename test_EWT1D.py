@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+import numpy as np
+from scipy.special import iv
+import matplotlib.pyplot as plt
+from ewt.ewt1d import *
+from ewt.utilities import ewt_params
+
+
 """
 Created on Mon Jun  8 15:44:06 2020
 Generates the results given by the 1D empirical wavelet transforms, which 
@@ -10,12 +16,6 @@ Feel free to try with your own signals and change parameters.
 @author: Basile Hurat
 """
 
-import numpy as np
-from scipy.special import iv
-import matplotlib.pyplot as plt
-from ewt.ewt1d import *
-from ewt.utilities import ewt_params
-
 plt.close('all')
 show_orig = 0   #show original signal
 show_bounds = 0 #show bounds 
@@ -23,7 +23,7 @@ show_coefs = 0  #show components
 show_recon = 0  #show reconstruction 
 signal = 'csig1'
 
-real = 1;
+real = 1
 if signal.lower() == 'csig1':
     fR = np.genfromtxt('Tests/1d/csig1R.csv', delimiter=',')
     fI = np.genfromtxt('Tests/1d/csig1I.csv', delimiter=',')
@@ -37,7 +37,7 @@ params = ewt_params()
 #Scalespace, locmax, locmaxmin, locmaxminf, adaptive, adaptivreg
 params.detect = 'adaptive'
 params.typeDetect = 'otsu'
-[ewtc, mfb, bounds] = ewt1d(f,params)
+[ewtc, mfb, bounds] = ewt1d(f, params)
 
 if show_orig == 1:
     plt.figure()
@@ -46,7 +46,7 @@ if show_orig == 1:
     plt.show()
 if show_bounds == 1:
     print(f'# of detected bounds: {len(bounds)}')
-    showewt1dBoundaries(f,bounds)
+    showewt1dBoundaries(f, bounds)
 if show_coefs == 1:
     showEWT1DCoefficients(ewtc)
 if show_recon == 1:
@@ -56,6 +56,6 @@ if show_recon == 1:
     plt.suptitle('Reconstructed signal')
     plt.show()
     if real:
-        print(f'Reconstruction difference: {np.linalg.norm(recon -f)}')
+        print(f'Reconstruction difference: {np.linalg.norm(recon - f)}')
     else:
-        print(f'Reconstruction difference: {np.linalg.norm(recon-f)}')
+        print(f'Reconstruction difference: {np.linalg.norm(recon - f)}')
